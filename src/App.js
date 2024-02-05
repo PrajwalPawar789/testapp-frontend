@@ -1,16 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import Typist from 'react-typist';
 
 function App() {
   const [authToken, setAuthToken] = useState('');
   const [file, setFile] = useState(null);
   const [processingResult, setProcessingResult] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [typingText, setTypingText] = useState('');
 
   const authenticate = async () => {
     try {
+      setIsLoading(true);
       const response = await axios.get('http://localhost:3001/authenticate', { withCredentials: true });
-      
+
       if (response.data && response.data.accessToken) {
         setAuthToken(response.data.accessToken.accessToken);
         setIsAuthenticated(true);
@@ -20,6 +24,8 @@ function App() {
       }
     } catch (error) {
       console.error('Error authenticating:', error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -37,6 +43,7 @@ function App() {
     formData.append('file', file);
 
     try {
+      setIsLoading(true);
       const response = await axios.post('http://localhost:3001/process-media', formData, {
         headers: {
           'Authorization': `Bearer ${authToken}`,
@@ -47,11 +54,14 @@ function App() {
       setProcessingResult(response.data);
     } catch (error) {
       console.error('Error processing media:', error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const getIntelligence = async () => {
     try {
+      setIsLoading(true);
       const response = await axios.get('http://localhost:3001/get-intelligence', {
         headers: {
           'Authorization': `Bearer ${authToken}`,
@@ -62,8 +72,24 @@ function App() {
       setProcessingResult(response.data);
     } catch (error) {
       console.error('Error fetching intelligence:', error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    // Fetch typing test text on component mount
+    const fetchTypingTest = async () => {
+      try {
+        const response = await axios.get('http://localhost:3001/api/get-typing-test');
+        setTypingText(response.data.typingText);
+      } catch (error) {
+        console.error('Error fetching typing test:', error.message);
+      }
+    };
+  
+    fetchTypingTest();
+  }, []);
 
   return (
     <div className="App min-h-screen flex flex-col items-center justify-center bg-gray-100">
@@ -71,36 +97,52 @@ function App() {
       <button
         className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 focus:outline-none focus:shadow-outline-blue"
         onClick={authenticate}
+        disabled={isLoading}
       >
-        Authenticate
+        {isLoading ? 'Authenticating...' : 'Authenticate'}
       </button>
       <input
         type="file"
         accept=".mp3, .wav, .mp4"
         onChange={handleFileChange}
-        disabled={!isAuthenticated}
+        disabled={!isAuthenticated || isLoading}
         className="mt-4"
       />
       <button
         className="bg-green-500 text-white px-4 py-2 rounded mt-4 disabled:opacity-50"
         onClick={processMedia}
-        disabled={!isAuthenticated || !file}
+        disabled={!isAuthenticated || !file || isLoading}
       >
-        Process Media
+        {isLoading ? 'Processing...' : 'Process Media'}
       </button>
       <button
         className="bg-purple-500 text-white px-4 py-2 rounded mt-4 disabled:opacity-50"
         onClick={getIntelligence}
-        disabled={!isAuthenticated}
+        disabled={!isAuthenticated || isLoading}
       >
-        Get Intelligence
+        {isLoading ? 'Fetching Intelligence...' : 'Get Intelligence'}
       </button>
 
-      {processingResult && (
+      {isLoading && <p>Loading...</p>}
+
+      {/* {typingText && (
+        <div className="mt-6">
+          <h2 className="text-xl font-semibold mb-2">Typing Test</h2>
+          <Typist>
+            <span>{typingText}</span>
+          </Typist>
+        </div>
+      )} */}
+
+      {processingResult && processingResult.length > 0 ? (
         <div className="mt-6">
           <h2 className="text-xl font-semibold mb-2">Processing Result</h2>
           <pre className="bg-gray-200 p-4 rounded">{JSON.stringify(processingResult, null, 2)}</pre>
         </div>
+      ) : null}
+
+      {processingResult && processingResult.length === 0 && !isLoading && (
+        <p>No results available yet. Please wait for the processing to complete.</p>
       )}
     </div>
   );
