@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import Typist from 'react-typist';
 
 function App() {
   const [authToken, setAuthToken] = useState('');
@@ -93,6 +92,7 @@ function App() {
 
   return (
     <div className="App min-h-screen flex flex-col items-center justify-center bg-gray-100">
+      
       <h1 className="text-3xl font-semibold mb-6">Test App</h1>
       <button
         className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 focus:outline-none focus:shadow-outline-blue"
@@ -124,15 +124,6 @@ function App() {
       </button>
 
       {isLoading && <p>Loading...</p>}
-
-      {/* {typingText && (
-        <div className="mt-6">
-          <h2 className="text-xl font-semibold mb-2">Typing Test</h2>
-          <Typist>
-            <span>{typingText}</span>
-          </Typist>
-        </div>
-      )} */}
 
       {processingResult && processingResult.length > 0 ? (
         <div className="mt-6">
