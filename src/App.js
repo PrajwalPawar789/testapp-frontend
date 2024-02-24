@@ -15,7 +15,7 @@ function App() {
       const response = await axios.get('http://localhost:3001/authenticate', { withCredentials: true });
 
       if (response.data && response.data.accessToken) {
-        setAuthToken(response.data.accessToken.accessToken);
+        setAuthToken(response.data.accessToken);
         setIsAuthenticated(true);
         console.log('Authentication successful:', response.data);
       } else {
@@ -43,7 +43,7 @@ function App() {
 
     try {
       setIsLoading(true);
-      const response = await axios.post('http://localhost:3001/process-media', formData, {
+      const response = await axios.post('http://localhost:3001/process-audio', formData, {
         headers: {
           'Authorization': `Bearer ${authToken}`,
         },
@@ -61,7 +61,7 @@ function App() {
   const getIntelligence = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get('http://localhost:3001/get-intelligence', {
+      const response = await axios.get('http://localhost:3001/call-score-status', {
         headers: {
           'Authorization': `Bearer ${authToken}`,
         },
@@ -71,6 +71,24 @@ function App() {
       setProcessingResult(response.data);
     } catch (error) {
       console.error('Error fetching intelligence:', error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getCallScore = async () => {
+    try {
+      setIsLoading(true);
+      const response = await axios.get('http://localhost:3001/get-call-score', {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        },
+      });
+
+      console.log('Call score fetched successfully:', response.data);
+      setProcessingResult(response.data);
+    } catch (error) {
+      console.error('Error fetching call score:', error.message);
     } finally {
       setIsLoading(false);
     }
@@ -92,7 +110,6 @@ function App() {
 
   return (
     <div className="App min-h-screen flex flex-col items-center justify-center bg-gray-100">
-      
       <h1 className="text-3xl font-semibold mb-6">Test App</h1>
       <button
         className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 focus:outline-none focus:shadow-outline-blue"
@@ -122,19 +139,22 @@ function App() {
       >
         {isLoading ? 'Fetching Intelligence...' : 'Get Intelligence'}
       </button>
+      <button
+        className="bg-yellow-500 text-white px-4 py-2 rounded mt-4 disabled:opacity-50"
+        onClick={getCallScore}
+        disabled={!isAuthenticated || isLoading || !processingResult || processingResult.status !== 'completed'}
+      >
+        {isLoading ? 'Fetching Call Score...' : 'Get Call Score'}
+      </button>
 
       {isLoading && <p>Loading...</p>}
 
-      {processingResult && processingResult.length > 0 ? (
+      {processingResult ? (
         <div className="mt-6">
           <h2 className="text-xl font-semibold mb-2">Processing Result</h2>
           <pre className="bg-gray-200 p-4 rounded">{JSON.stringify(processingResult, null, 2)}</pre>
         </div>
       ) : null}
-
-      {processingResult && processingResult.length === 0 && !isLoading && (
-        <p>No results available yet. Please wait for the processing to complete.</p>
-      )}
     </div>
   );
 }
